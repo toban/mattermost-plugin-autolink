@@ -1,3 +1,12 @@
+# admin_console
+
+http://localhost:8065/admin_console/user_management/teams
+# Deploy
+
+MM_SERVICESETTINGS_SITEURL=http://localhost:8065 MM_ADMIN_USERNAME=toan MM_ADMIN_PASSWORD=abc123 make deploy
+
+
+
 # Autolink Plugin
 
 [![Build Status](https://img.shields.io/circleci/project/github/mattermost/mattermost-plugin-autolink/master.svg)](https://circleci.com/gh/mattermost/mattermost-plugin-autolink)
