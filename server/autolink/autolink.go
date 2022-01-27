@@ -3,6 +3,10 @@ package autolink
 import (
 	"fmt"
 	"regexp"
+
+	"io/ioutil"
+	"log"
+	"net/http"
 )
 
 // Autolink represents a pattern to autolink.
@@ -89,6 +93,33 @@ func (l *Autolink) Compile() error {
 	return nil
 }
 
+func doReq(url string) (content string) {
+
+	resp, err := http.Get(url)
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return string(body)
+}
+
+func getTitle(content string) (title string) {
+
+	re := regexp.MustCompile("<title>(.*)</title>")
+
+	parts := re.FindStringSubmatch(content)
+
+	if len(parts) > 0 {
+		return parts[1]
+	} else {
+		return "no title"
+	}
+}
+
 // Replace will subsitute the regex's with the supplied links
 func (l Autolink) Replace(message string) string {
 	if l.re == nil {
@@ -97,7 +128,25 @@ func (l Autolink) Replace(message string) string {
 
 	// Since they don't consume, `\b`s require no special handling, can just ReplaceAll
 	if l.canReplaceAll {
-		return l.re.ReplaceAllString(message, l.template)
+		// lookup happens here
+		// resp, err := http.Get("https://jsonplaceholder.typicode.com/posts")
+		// if err != nil {
+		// 	log.Fatalln(err)
+		// }
+		// //We Read the response body on the line below.
+		// body, err := ioutil.ReadAll(resp.Body)
+		// if err != nil {
+		// 	log.Fatalln(err)
+		// }
+		// //Convert the body to type string
+		// sb := string(body)
+		// log.Printf(sb)
+
+		lookupUrl := l.re.ReplaceAllString(message, l.template)
+		content := doReq(lookupUrl)
+		title := getTitle(content)
+
+		return title
 	}
 
 	// Replace one at a time
