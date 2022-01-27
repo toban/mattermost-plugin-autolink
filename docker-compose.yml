@@ -1,0 +1,24 @@
+#sudo docker run --name mattermost-preview -d --publish 8065:8065 mattermost/mattermost-preview
+
+# Example Wikibase docker-compose setup
+version: '3.4'
+
+
+services:
+  mattermost:
+    image: mattermost/mattermost-preview
+    restart: always
+    ports:
+      - "8065:8065"
+    volumes:
+      - ./config_docker.json:/mm/mattermost/config/config_docker.json
+      - mattermost-data:/mm/mattermost-data
+
+    networks:
+      default:
+        aliases:
+         - mattermost.svc
+
+
+volumes:
+  mattermost-data:
