@@ -1,0 +1,21 @@
+name: "Test"
+
+on:
+  push:
+
+jobs:
+  analyze:
+    name: Build test
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Run tests
+      run: make test
+
