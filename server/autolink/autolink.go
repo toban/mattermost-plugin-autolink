@@ -26,6 +26,7 @@ type Autolink struct {
 	lookupUrlTemplate string
 	re                *regexp.Regexp
 	canReplaceAll     bool
+	shouldLookup      bool
 }
 
 func (l Autolink) Equals(x Autolink) bool {
@@ -96,6 +97,7 @@ func (l *Autolink) Compile() error {
 	l.template = template
 	l.lookupUrlTemplate = lookupUrlTemplate
 	l.canReplaceAll = canReplaceAll
+	l.shouldLookup = len(lookupUrlTemplate) > 0
 
 	return nil
 }
@@ -141,14 +143,14 @@ func (l Autolink) Replace(message string) string {
 	if l.canReplaceAll {
 
 		// lookup happens here if the template is set
-		//if l.lookupUrlTemplate != "" {
-		lookupUrl := l.re.ReplaceAllString(message, l.lookupUrlTemplate)
-		content := doReq(lookupUrl)
-		title := getTitle(content)
-		return fmt.Sprintf("[%s](%s)", title, lookupUrl)
-		//}
+		if l.shouldLookup {
+			lookupUrl := l.re.ReplaceAllString(message, l.lookupUrlTemplate)
+			content := doReq(lookupUrl)
+			title := getTitle(content)
+			return fmt.Sprintf("[%s](%s)", title, lookupUrl)
+		}
 
-		//return l.re.ReplaceAllString(message, l.template)
+		return l.re.ReplaceAllString(message, l.template)
 	}
 
 	// Replace one at a time
@@ -173,7 +175,7 @@ func (l Autolink) Replace(message string) string {
 		lookupUrl := l.re.ReplaceAllString(strings.TrimSpace(submatchWord), l.lookupUrlTemplate)
 		content := doReq(lookupUrl)
 		title := getTitle(content)
-		markupLink := fmt.Sprintf(" [%s](%s)", title, lookupUrl)
+		markupLink := fmt.Sprintf(" [%s](%s) ", title, lookupUrl)
 		titleByteArray := []byte(markupLink)
 
 		out = append(out, titleByteArray...)
