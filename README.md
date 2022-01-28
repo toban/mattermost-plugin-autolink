@@ -5,6 +5,16 @@ http://localhost:8065/admin_console/user_management/teams
 
 MM_SERVICESETTINGS_SITEURL=http://localhost:8065 MM_ADMIN_USERNAME=toan MM_ADMIN_PASSWORD=abc123 make deploy
 
+# Phabricator API
+
+https://secure.phabricator.com/book/phabricator/article/conduit/
+
+## TODOLIST
+
+- Add tests to lookup thing (when shouldLookup is enabled)
+- Possibly break out the lookup functions into it's own file/struct thingy
+- Add support / try out pasting full links
+- Add gerrit support?
 
 
 # Autolink Plugin

@@ -533,39 +533,18 @@
                         "DisableNonWordPrefix": false,
                         "DisableNonWordSuffix": false,
                         "Disabled": false,
-                        "Name": "Visa",
-                        "Pattern": "(?P\u003cVISA\u003e(?P\u003cpart1\u003e4\\d{3})[ -]?(?P\u003cpart2\u003e\\d{4})[ -]?(?P\u003cpart3\u003e\\d{4})[ -]?(?P\u003cLastFour\u003e[0-9]{4}))",
-                        "Scope": [
-                            "derp/off-topic"
-                        ],
-                        "Template": "VISA XXXX-XXXX-XXXX-$LastFour",
-                        "WordMatch": true
-                    },
-                    {
-                        "DisableNonWordPrefix": false,
-                        "DisableNonWordSuffix": false,
-                        "Disabled": false,
-                        "Name": "foobar",
-                        "Pattern": "",
-                        "Scope": null,
-                        "Template": "",
-                        "WordMatch": false
-                    },
-                    {
-                        "DisableNonWordPrefix": false,
-                        "DisableNonWordSuffix": false,
-                        "Disabled": false,
-                        "Name": "visa",
-                        "Pattern": "",
-                        "Scope": null,
-                        "Template": "",
+                        "LookupUrlTemplate": "https://phabricator.wikimedia.org/$task",
+                        "Name": "Phabricator",
+                        "Pattern": "(?P\u003ctask\u003e\\bT\\d+)",
+                        "Scope": "derp/off-topic",
+                        "Template": "https://phabricator.wikimedia.org/$task",
                         "WordMatch": false
                     }
                 ],
                 "PluginAdmins": ""
             },
             "playbooks": {
-                "BotUserID": "hqfoe9xyejnjzbtm1qgphf519e"
+                "BotUserID": "ts86muz3pfncim4ndfw889ue4c"
             }
         },
         "PluginStates": {

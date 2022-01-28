@@ -3,6 +3,11 @@ package autolink
 import (
 	"fmt"
 	"regexp"
+	"strings"
+
+	"io/ioutil"
+	"log"
+	"net/http"
 )
 
 // Autolink represents a pattern to autolink.
@@ -11,14 +16,17 @@ type Autolink struct {
 	Disabled             bool
 	Pattern              string
 	Template             string
+	LookupUrlTemplate    string
 	Scope                []string
 	WordMatch            bool
 	DisableNonWordPrefix bool
 	DisableNonWordSuffix bool
 
-	template      string
-	re            *regexp.Regexp
-	canReplaceAll bool
+	template          string
+	lookupUrlTemplate string
+	re                *regexp.Regexp
+	canReplaceAll     bool
+	shouldLookup      bool
 }
 
 func (l Autolink) Equals(x Autolink) bool {
@@ -59,6 +67,9 @@ func (l *Autolink) Compile() error {
 	canReplaceAll := false
 	pattern := l.Pattern
 	template := l.Template
+	// todo do something smart to this
+	lookupUrlTemplate := l.LookupUrlTemplate
+
 	if !l.DisableNonWordPrefix {
 		if l.WordMatch {
 			pattern = `\b` + pattern
@@ -84,9 +95,42 @@ func (l *Autolink) Compile() error {
 	}
 	l.re = re
 	l.template = template
+	l.lookupUrlTemplate = lookupUrlTemplate
 	l.canReplaceAll = canReplaceAll
+	l.shouldLookup = len(lookupUrlTemplate) > 0
 
 	return nil
+}
+
+func doReq(url string) (content string) {
+
+	resp, err := http.Get(url)
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return string(body)
+}
+
+func getTitle(content string) (title string) {
+
+	re := regexp.MustCompile("<title>(.*)</title>")
+
+	parts := re.FindStringSubmatch(content)
+
+	if len(parts) > 0 {
+		return parts[1]
+	} else {
+		return "no title"
+	}
+}
+
+func Var_dump(expression ...interface{}) {
+	fmt.Println(fmt.Sprintf("%#v", expression))
 }
 
 // Replace will subsitute the regex's with the supplied links
@@ -97,6 +141,15 @@ func (l Autolink) Replace(message string) string {
 
 	// Since they don't consume, `\b`s require no special handling, can just ReplaceAll
 	if l.canReplaceAll {
+
+		// lookup happens here if the template is set
+		if l.shouldLookup {
+			lookupUrl := l.re.ReplaceAllString(message, l.lookupUrlTemplate)
+			content := doReq(lookupUrl)
+			title := getTitle(content)
+			return fmt.Sprintf("[%s](%s)", title, lookupUrl)
+		}
+
 		return l.re.ReplaceAllString(message, l.template)
 	}
 
@@ -107,15 +160,33 @@ func (l Autolink) Replace(message string) string {
 		if len(in) == 0 {
 			break
 		}
-
+		// get index of first occurance of Txxxxx ex: I found T298595, and T298592
 		submatch := l.re.FindSubmatchIndex(in)
 		if submatch == nil {
 			break
 		}
+		if l.shouldLookup {
+			// TODO Add a cache for lookups
+			log.Println("--------------------------------------------------------")
 
-		out = append(out, in[:submatch[0]]...)
-		out = l.re.Expand(out, []byte(l.template), in, submatch)
-		in = in[submatch[1]:]
+			// New lookup stuff that should get hidden behind some flag
+			submatchWord := string(in[submatch[0]:submatch[1]])
+			out = append(out, in[:submatch[0]]...)
+			lookupUrl := l.re.ReplaceAllString(strings.TrimSpace(submatchWord), l.lookupUrlTemplate)
+			content := doReq(lookupUrl)
+			title := getTitle(content)
+			markupLink := fmt.Sprintf(" [%s](%s) ", title, lookupUrl)
+			titleByteArray := []byte(markupLink)
+
+			out = append(out, titleByteArray...)
+			in = in[submatch[1]:]
+		} else {
+
+			out = append(out, in[:submatch[0]]...)
+			out = l.re.Expand(out, []byte(l.template), in, submatch)
+			in = in[submatch[1]:]
+		}
+
 	}
 	out = append(out, in...)
 	return string(out)
