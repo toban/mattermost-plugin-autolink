@@ -15,14 +15,16 @@ type Autolink struct {
 	Disabled             bool
 	Pattern              string
 	Template             string
+	LookupUrlTemplate    string
 	Scope                []string
 	WordMatch            bool
 	DisableNonWordPrefix bool
 	DisableNonWordSuffix bool
 
-	template      string
-	re            *regexp.Regexp
-	canReplaceAll bool
+	template          string
+	lookupUrlTemplate string
+	re                *regexp.Regexp
+	canReplaceAll     bool
 }
 
 func (l Autolink) Equals(x Autolink) bool {
@@ -63,6 +65,9 @@ func (l *Autolink) Compile() error {
 	canReplaceAll := false
 	pattern := l.Pattern
 	template := l.Template
+	// todo do something smart to this
+	lookupUrlTemplate := l.LookupUrlTemplate
+
 	if !l.DisableNonWordPrefix {
 		if l.WordMatch {
 			pattern = `\b` + pattern
@@ -88,6 +93,7 @@ func (l *Autolink) Compile() error {
 	}
 	l.re = re
 	l.template = template
+	l.lookupUrlTemplate = lookupUrlTemplate
 	l.canReplaceAll = canReplaceAll
 
 	return nil
@@ -128,25 +134,16 @@ func (l Autolink) Replace(message string) string {
 
 	// Since they don't consume, `\b`s require no special handling, can just ReplaceAll
 	if l.canReplaceAll {
-		// lookup happens here
-		// resp, err := http.Get("https://jsonplaceholder.typicode.com/posts")
-		// if err != nil {
-		// 	log.Fatalln(err)
-		// }
-		// //We Read the response body on the line below.
-		// body, err := ioutil.ReadAll(resp.Body)
-		// if err != nil {
-		// 	log.Fatalln(err)
-		// }
-		// //Convert the body to type string
-		// sb := string(body)
-		// log.Printf(sb)
 
-		lookupUrl := l.re.ReplaceAllString(message, l.template)
-		content := doReq(lookupUrl)
-		title := getTitle(content)
+		// lookup happens here if the template is set
+		if l.lookupUrlTemplate != "" {
+			lookupUrl := l.re.ReplaceAllString(message, l.lookupUrlTemplate)
+			content := doReq(lookupUrl)
+			title := getTitle(content)
+			return fmt.Sprintf("[%s](%s)", title, lookupUrl)
+		}
 
-		return title
+		return l.re.ReplaceAllString(message, l.template)
 	}
 
 	// Replace one at a time
@@ -161,6 +158,8 @@ func (l Autolink) Replace(message string) string {
 		if submatch == nil {
 			break
 		}
+
+		// TODO Add a cache for lookups
 
 		out = append(out, in[:submatch[0]]...)
 		out = l.re.Expand(out, []byte(l.template), in, submatch)
