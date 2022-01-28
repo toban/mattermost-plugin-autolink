@@ -3,6 +3,7 @@ package autolink
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"io/ioutil"
 	"log"
@@ -126,6 +127,10 @@ func getTitle(content string) (title string) {
 	}
 }
 
+func Var_dump(expression ...interface{}) {
+	fmt.Println(fmt.Sprintf("%#v", expression))
+}
+
 // Replace will subsitute the regex's with the supplied links
 func (l Autolink) Replace(message string) string {
 	if l.re == nil {
@@ -153,7 +158,6 @@ func (l Autolink) Replace(message string) string {
 		if len(in) == 0 {
 			break
 		}
-
 		// get index of first occurance of Txxxxx ex: I found T298595, and T123456
 		submatch := l.re.FindSubmatchIndex(in)
 		if submatch == nil {
@@ -163,13 +167,28 @@ func (l Autolink) Replace(message string) string {
 		// TODO Add a cache for lookups
 		log.Println("--------------------------------------------------------")
 
-		// I found T298595
+		// asdf T298595
+		// submatch = []int{4, 12, 4, 5, 4, 5, 5, 12, 12, 12}
+		Var_dump(submatch)
+		submatchWord := string(in[submatch[0]:submatch[1]])
+		//log.Println("https://phabricator.wikimedia.org/" + submatchWord)
+		// asdf
 		out = append(out, in[:submatch[0]]...)
-		log.Println(string(out))
-		log.Println(string(in[:submatch[0]]))
+		// message from index 0 up until the point of T298595
+		//log.Println(string(in[:submatch[0]]))
 
-		// I found T298595 Publish Wikibase 1.36.3-wmde.4 release packages
-		out = l.re.Expand(out, []byte(l.template), in, submatch)
+		lookupUrl := l.re.ReplaceAllString(strings.TrimSpace(submatchWord), l.lookupUrlTemplate)
+		content := doReq(lookupUrl)
+		title := getTitle(content)
+		markupLink := fmt.Sprintf("[%s](%s)", title, lookupUrl)
+		titleByteArray := []byte(markupLink)
+		//log.Println(title)
+
+		// fmt.Sprintf("[%s](%s)", title, lookupUrl)
+		// replaces submatch with template in the entire thing
+		//out = l.re.Expand(out, []byte(l.template), in, submatch)
+		out = append(out, titleByteArray...)
+
 		log.Println(string(out))
 
 		in = in[submatch[1]:]
