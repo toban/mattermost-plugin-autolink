@@ -165,24 +165,27 @@ func (l Autolink) Replace(message string) string {
 		if submatch == nil {
 			break
 		}
+		if l.shouldLookup {
+			// TODO Add a cache for lookups
+			log.Println("--------------------------------------------------------")
 
-		// TODO Add a cache for lookups
-		log.Println("--------------------------------------------------------")
+			// New lookup stuff that should get hidden behind some flag
+			submatchWord := string(in[submatch[0]:submatch[1]])
+			out = append(out, in[:submatch[0]]...)
+			lookupUrl := l.re.ReplaceAllString(strings.TrimSpace(submatchWord), l.lookupUrlTemplate)
+			content := doReq(lookupUrl)
+			title := getTitle(content)
+			markupLink := fmt.Sprintf(" [%s](%s) ", title, lookupUrl)
+			titleByteArray := []byte(markupLink)
 
-		// New lookup stuff that should get hidden behind some flag
-		submatchWord := string(in[submatch[0]:submatch[1]])
-		out = append(out, in[:submatch[0]]...)
-		lookupUrl := l.re.ReplaceAllString(strings.TrimSpace(submatchWord), l.lookupUrlTemplate)
-		content := doReq(lookupUrl)
-		title := getTitle(content)
-		markupLink := fmt.Sprintf(" [%s](%s) ", title, lookupUrl)
-		titleByteArray := []byte(markupLink)
+			out = append(out, titleByteArray...)
+			in = in[submatch[1]:]
+		} else {
 
-		out = append(out, titleByteArray...)
-		in = in[submatch[1]:]
-
-		// replaces submatch with template in the entire thing
-		//out = l.re.Expand(out, []byte(l.template), in, submatch)
+			out = append(out, in[:submatch[0]]...)
+			out = l.re.Expand(out, []byte(l.template), in, submatch)
+			in = in[submatch[1]:]
+		}
 
 	}
 	out = append(out, in...)
