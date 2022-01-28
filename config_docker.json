@@ -532,12 +532,12 @@
                     {
                         "DisableNonWordPrefix": false,
                         "DisableNonWordSuffix": false,
-                        "Disabled": false,                        
+                        "Disabled": false,
+                        "LookupUrlTemplate": "https://phabricator.wikimedia.org/$task",
                         "Name": "Phabricator",
                         "Pattern": "(?P\u003ctask\u003e\\bT\\d+)",
                         "Scope": "derp/off-topic",
                         "Template": "https://phabricator.wikimedia.org/$task",
-                        "LookupUrlTemplate": "https://phabricator.wikimedia.org/$task",
                         "WordMatch": false
                     }
                 ],

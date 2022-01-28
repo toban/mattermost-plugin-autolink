@@ -136,14 +136,14 @@ func (l Autolink) Replace(message string) string {
 	if l.canReplaceAll {
 
 		// lookup happens here if the template is set
-		if l.lookupUrlTemplate != "" {
-			lookupUrl := l.re.ReplaceAllString(message, l.lookupUrlTemplate)
-			content := doReq(lookupUrl)
-			title := getTitle(content)
-			return fmt.Sprintf("[%s](%s)", title, lookupUrl)
-		}
+		//if l.lookupUrlTemplate != "" {
+		lookupUrl := l.re.ReplaceAllString(message, l.lookupUrlTemplate)
+		content := doReq(lookupUrl)
+		title := getTitle(content)
+		return fmt.Sprintf("[%s](%s)", title, lookupUrl)
+		//}
 
-		return l.re.ReplaceAllString(message, l.template)
+		//return l.re.ReplaceAllString(message, l.template)
 	}
 
 	// Replace one at a time
@@ -154,15 +154,24 @@ func (l Autolink) Replace(message string) string {
 			break
 		}
 
+		// get index of first occurance of Txxxxx ex: I found T298595, and T123456
 		submatch := l.re.FindSubmatchIndex(in)
 		if submatch == nil {
 			break
 		}
 
 		// TODO Add a cache for lookups
+		log.Println("--------------------------------------------------------")
 
+		// I found T298595
 		out = append(out, in[:submatch[0]]...)
+		log.Println(string(out))
+		log.Println(string(in[:submatch[0]]))
+
+		// I found T298595 Publish Wikibase 1.36.3-wmde.4 release packages
 		out = l.re.Expand(out, []byte(l.template), in, submatch)
+		log.Println(string(out))
+
 		in = in[submatch[1]:]
 	}
 	out = append(out, in...)

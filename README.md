@@ -5,6 +5,9 @@ http://localhost:8065/admin_console/user_management/teams
 
 MM_SERVICESETTINGS_SITEURL=http://localhost:8065 MM_ADMIN_USERNAME=toan MM_ADMIN_PASSWORD=abc123 make deploy
 
+# Phabricator API
+
+https://secure.phabricator.com/book/phabricator/article/conduit/
 
 
 # Autolink Plugin
